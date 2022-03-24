@@ -6,7 +6,7 @@ Llamadas asincronas a un servicio externo.
 	Configuramos la clase principal con la anotación
 	
 		@EnableAsync
-		@ComponentScan(basePackages = {"controller"})
+		@ComponentScan(basePackages = {"controller","servicio"})
 		@SpringBootApplication
 	 		public class Application {
 	
