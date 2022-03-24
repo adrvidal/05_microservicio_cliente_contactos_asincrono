@@ -1,0 +1,62 @@
+
+Llamadas asincronas a un servicio externo.
+
+1. Configurar la multitarea en el servicio cliente.
+	
+	Configuramos la clase principal con la anotación
+	
+		@EnableAsync
+		@ComponentScan(basePackages = {"controller"})
+		@SpringBootApplication
+	 		public class Application {
+	
+	Configuramos el objeto Executor (de un paquete de Java estandard)
+	Este objeto se encarga de lanzar la llamada en modo asíncrono (con un hilo independiente) para que el cliente (controller) pueda continuar su ejecución.
+	
+		@Bean
+		public Executor executor() {
+			return new ThreadPoolTaskExecutor(); //Devolvemos una ThreadPoolTaskExecutor que es una clase de Spring que implementa la interfaz Executor
+		}
+		
+	Como sabemos, los métodos @Bean de la clase de configuración de Spring, son llamados por Spring en el momento en el que Spring inicia
+	y que los objetos devueltos por estos, métodos son objetos o beans gestionados por Spring a través de su contenedor.	
+	
+
+2. La llamada al microservicio externo NO SE HACE directamente desde el controlador, lo hacemos en una clase independiente (una clase de Servicio)
+	
+	0. Hacemos la pareja Inferfaz clase. Esto siempre es así en cada capa
+	
+	1. Anotamos la clase con @service para que nos la instancie spring
+	
+	2. Encapsulamos la el acceso asíncrono al servicio remoto
+	
+		Método debe estar anotado con @Async 
+			Con el objeto Executor, creado por Spring, cuando desde el controller se llama al método @Async de esta otra clase
+			se pone esa llamada en un segundo PROCESO INDEPENDIENTE, un HILO independiente que es getionado por este objeto Executor
+			
+			La respuesta se entrega a través de un CompletableFuture, este objeto permite saber sal controlador:
+				Si la respuesta ya está disponible
+					Procesarla
+						etc
+					
+3. El método controller PersonasController se hace la llamada a la petición asíncrona.
+
+		1. Como la recuperación de los datos del servicio externo de contactos es muy rápida (porque es una llamada en local), tratamos 
+		de simular que tarda cierto tiempo en recoger todos esos contactos y enviar la respuesta.
+		
+			service.AgendaServiceImpl.recuperarContactos()=>Thread.sleep(8000);
+
+			
+		Para comprender como funciona esta intereación asíncrona suponemos que el controlador tiene que hacer una tarea adiccional 
+		mientras no se obtiene la respuesta. El controlador NO SE detiene esperar la respuesta (NO SE QUEDA BLOQUEADO).
+		
+			Tarea del controller 
+				(50 milisegundos)				
+			Tarea del controller 
+				(50 milisegundos)
+				
+			Una ver termina las tareas recoje el resultado.
+			
+
+		En algun momento queremos tener acceso a la respuesta: mediante CompletableFuture se puede tener acceso a la respuesta con get.
+
